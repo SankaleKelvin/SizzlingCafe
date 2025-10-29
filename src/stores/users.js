@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import api from '../services/api';   // read-only API (GET)
-import api_2 from '../services/api_2'; // write API (POST/DELETE) — matches your existing pattern
+import api from '../services/api';   
+import api_2 from '../services/api_2'; 
 
 export const useUsersStore = defineStore('users', {
   state: () => ({
@@ -39,9 +39,9 @@ export const useUsersStore = defineStore('users', {
   actions: {
     async fetchUsers() {
       try {
-        const resp = await api.get('users');
+        const resp = await api.get('/getUser');
         // Expect array
-        this.users = resp.data;
+        this.users = resp.data.User;
       } catch (err) {
         console.error('fetchUsers error', err);
       }

@@ -31,7 +31,7 @@ const password = ref('');
 onMounted(() => {
   const t = TokenService.getToken();
   if (t !== null && t !== '') {
-    router.push('/designation');
+    router.push('/welcome');
   }
 });
 
@@ -43,7 +43,7 @@ async function login() {
       password: password.value,
     });
 
-    const token = response?.data?.token;
+    const token = response?.data;
     if (!token) {
       console.error('No token returned from login response', response);
       return;

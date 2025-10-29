@@ -24,9 +24,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import '../assets/css/login.css'
 import api from '../services/api';
+import router from '@/router';
 
 // reactive state
 const name = ref('')
@@ -34,6 +35,9 @@ const email = ref('')
 const password = ref('')
 const password_confirmation = ref('')
 
+function login(){
+  router.push('/login')
+}
 
 // register user
 async function register() {

@@ -17,7 +17,7 @@
     </v-snackbar>
 
     <!-- Data table -->
-    <v-data-table :headers="headers" :items="users" class="elevation-1">
+    <v-data-table :headers="headers" :items="usersStore.users" class="elevation-1">
       <template v-slot:top>
         <v-toolbar flat color="transparent">
           <v-toolbar-title>Users</v-toolbar-title>
@@ -64,7 +64,12 @@
                 <v-text-field v-model="editedItem.email" label="Email"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedItem.password" label="Password" type="password" :hint="passwordHint"></v-text-field>
+                <v-text-field
+                  v-model="editedItem.password"
+                  label="Password"
+                  type="password"
+                  :hint="passwordHint"
+                ></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
@@ -89,7 +94,12 @@
                   show-size
                 ></v-file-input>
                 <v-img v-if="filePreview" :src="filePreview" width="200" height="200"></v-img>
-                <v-img v-else-if="editedItem.user_image" :src="getImageUrl(editedItem.user_image)" width="200" height="200"></v-img>
+                <v-img
+                  v-else-if="editedItem.user_image"
+                  :src="getImageUrl(editedItem.user_image)"
+                  width="200"
+                  height="200"
+                ></v-img>
               </v-col>
             </v-row>
           </v-container>
@@ -118,160 +128,160 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useUsersStore } from '@/stores/users';
-import { useColorsStore } from '@/stores/colors';
+import { ref, computed, onMounted } from 'vue'
+import { useUsersStore } from '@/stores/users'
+import { useColorsStore } from '@/stores/colors'
 
-const usersStore = useUsersStore();
-const colors = useColorsStore();
+const usersStore = useUsersStore()
+const colors = useColorsStore()
 
 // local reactive refs
-const image = ref(null);
-const snackbarTimeout = 1500;
+const image = ref(null)
+const snackbarTimeout = 1500
 
 const snackbarCreate = computed({
   get: () => usersStore.snackbarCreate,
   set: (v) => (usersStore.snackbarCreate = v),
-});
+})
 const snackbarUpdate = computed({
   get: () => usersStore.snackbarUpdate,
   set: (v) => (usersStore.snackbarUpdate = v),
-});
+})
 const snackbarDelete = computed({
   get: () => usersStore.snackbarDelete,
   set: (v) => (usersStore.snackbarDelete = v),
-});
+})
 
 const dialog = computed({
   get: () => usersStore.dialog,
   set: (v) => (usersStore.dialog = v),
-});
+})
 const dialogDelete = computed({
   get: () => usersStore.dialogDelete,
   set: (v) => (usersStore.dialogDelete = v),
-});
+})
 
-const users = computed(() => usersStore.users);
-const editedItem = computed(() => usersStore.editedItem);
-const formTitle = computed(() => (usersStore.editedIndex === -1 ? 'New User' : 'Edit User'));
+const users = computed(() => usersStore.users)
+const editedItem = computed(() => usersStore.editedItem)
+const formTitle = computed(() => (usersStore.editedIndex === -1 ? 'New User' : 'Edit User'))
 
 const headers = [
   { title: '', key: 'user_image', sortable: false, align: 'start' },
   { title: 'Name', key: 'name', sortable: true },
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false },
-];
+]
 
 // replace with roles source if available. For now an empty array
-const roleOptions = ref([]);
+const roleOptions = ref([])
 
 // preview computed
 const filePreview = computed(() => {
-  const f = image.value ? (Array.isArray(image.value) ? image.value[0] : image.value) : null;
-  return f ? URL.createObjectURL(f) : null;
-});
+  const f = image.value ? (Array.isArray(image.value) ? image.value[0] : image.value) : null
+  return f ? URL.createObjectURL(f) : null
+})
 
 const getImageUrl = (path) => {
-  if (!path) return null;
-  return `${process.env.VUE_APP_BASE_URL}/storage/${path}`;
-};
+  if (!path) return null
+  return `${process.env.VUE_APP_BASE_URL}/storage/${path}`
+}
 
-const passwordHint = computed(() => (usersStore.editedIndex === -1 ? 'Required' : 'Leave blank to keep current'));
+const passwordHint = computed(() =>
+  usersStore.editedIndex === -1 ? 'Required' : 'Leave blank to keep current',
+)
 
 // lifecycle
 onMounted(() => {
-  usersStore.fetchUsers();
-  // optionally fetch roleOptions here if you have an API
-  // e.g. rolesApi.get('roles').then(r => roleOptions.value = r.data)
-});
+  usersStore.fetchUsers()
+})
 
 // actions
 function openCreate() {
-  usersStore.openDialog();
-  image.value = null;
+  usersStore.openDialog()
+  image.value = null
 }
 
 async function onEdit(id) {
-  await usersStore.editItem(id);
-  image.value = null;
+  await usersStore.editItem(id)
+  image.value = null
 }
 
 function onDelete(id) {
-  usersStore.openDelete(id);
+  usersStore.openDelete(id)
 }
 
 function closeDialog() {
-  usersStore.closeDialog();
-  image.value = null;
+  usersStore.closeDialog()
+  image.value = null
 }
 
 function closeDelete() {
-  usersStore.closeDelete();
+  usersStore.closeDelete()
 }
 
 async function save() {
   // build FormData
-  const fd = new FormData();
+  const fd = new FormData()
   // include fields expected by backend
-  fd.append('name', editedItem.value.name || '');
-  fd.append('email', editedItem.value.email || '');
+  fd.append('name', editedItem.value.name || '')
+  fd.append('email', editedItem.value.email || '')
   // password: only append if provided (create requires, update optional)
-  if (editedItem.value.password) fd.append('password', editedItem.value.password);
-  fd.append('is_active', editedItem.value.is_active ? '1' : '0');
-  if (editedItem.value.role_id) fd.append('role_id', editedItem.value.role_id);
+  if (editedItem.value.password) fd.append('password', editedItem.value.password)
+  fd.append('is_active', editedItem.value.is_active ? '1' : '0')
+  if (editedItem.value.role_id) fd.append('role_id', editedItem.value.role_id)
 
   if (image.value) {
     // support either File or File[] (v-file-input returns array by default)
-    const file = Array.isArray(image.value) ? image.value[0] : image.value;
-    fd.append('image', file);
+    const file = Array.isArray(image.value) ? image.value[0] : image.value
+    fd.append('image', file)
   }
 
   try {
     if (usersStore.editedIndex > -1) {
       // update
-      await usersStore.updateUser(usersStore.editedIndex, fd);
-      snackbarUpdate.value = true;
-      colors.setFooterColor('warning'); // optional
+      await usersStore.updateUser(usersStore.editedIndex, fd)
+      snackbarUpdate.value = true
+      colors.setFooterColor('warning') // optional
     } else {
       // create
       // For create ensure password is present (frontend should validate)
       if (!editedItem.value.password) {
         // you can show an error or return
-        console.warn('Password required for create');
+        console.warn('Password required for create')
       }
-      await usersStore.createUser(fd);
-      snackbarCreate.value = true;
-      colors.setFooterColor('success'); // optional
+      await usersStore.createUser(fd)
+      snackbarCreate.value = true
+      colors.setFooterColor('success') // optional
     }
 
     // refresh list to ensure consistent state
-    await usersStore.fetchUsers();
+    await usersStore.fetchUsers()
     // reset form
-    image.value = null;
-    usersStore.closeDialog();
+    image.value = null
+    usersStore.closeDialog()
   } catch (err) {
-    console.error('save error', err);
+    console.error('save error', err)
   } finally {
     // reset color after timeout (optional)
     setTimeout(() => {
-      colors.setFooterColor('info');
-    }, snackbarTimeout + 200);
+      colors.setFooterColor('info')
+    }, snackbarTimeout + 200)
   }
 }
 
 async function confirmDelete() {
-  if (!usersStore.deletingId) return;
+  if (!usersStore.deletingId) return
   try {
-    await usersStore.deleteUser(usersStore.deletingId);
-    snackbarDelete.value = true;
+    await usersStore.deleteUser(usersStore.deletingId)
+    snackbarDelete.value = true
   } catch (err) {
-    console.error('confirmDelete error', err);
+    console.error('confirmDelete error', err)
   } finally {
-    await usersStore.fetchUsers();
+    await usersStore.fetchUsers()
   }
 }
 
 function refresh() {
-  usersStore.fetchUsers();
+  usersStore.fetchUsers()
 }
 </script>

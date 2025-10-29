@@ -1,30 +1,26 @@
 <template>
-  <v-container fluid class="pa-6 fill-height d-flex align-center justify-center bg-blue-grey-lighten-5">
+  <v-container
+    fluid
+    class="pa-6 fill-height d-flex align-center justify-center bg-blue-grey-lighten-5"
+  >
     <v-card elevation="8" max-width="600" class="pa-8 text-center rounded-xl">
       <v-img src="/img1.png" max-width="120" class="mx-auto mb-4"></v-img>
 
-      <h1 class="text-h4 font-weight-bold mb-3">Welcome to Sizzling Cafe</h1>
-      <p class="text-body-1 mb-6">
-        Welcome for a variety of meals.
-      </p>
+      <h1 class="text-h4 font-weight-bold mb-3">Welcome {{ username.name }}! <br/> To Sizzling Cafe</h1>
+      <p class="text-body-1 mb-6">Welcome for a variety of meals.</p>
 
       <v-divider class="my-4"></v-divider>
 
       <v-row justify="center" class="mt-4">
         <v-col cols="12" sm="4">
-          <v-btn
-            block
-            color="blue"
-            dark
-            @click="goTo('LoginPage')"
-            prepend-icon="mdi-login"
-          >
-            Login
-          </v-btn>
+          <v-btn text @click="toggleAuthentication">
+            <span>{{ isAuthenticated ? 'Logout' : 'Login' }}</span>
+            <v-icon right>{{ isAuthenticated ? 'mdi-logout' : 'mdi-login' }}</v-icon>
+          </v-btn>          
         </v-col>
 
         <v-col cols="12" sm="4">
-          <v-btn
+          <v-btn v-if="!isAuthenticated"
             block
             color="green"
             dark
@@ -52,19 +48,33 @@
 </template>
 
 <script setup>
+import TokenService from '@/services/TokenService'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const username = computed(() => TokenService.getUser())
 
-// Check login status from store
-const isAuthenticated = computed(() => authStore.isAuthenticated)
+
+// Check login status from token service
+const isAuthenticated = computed(() => TokenService.isAuthenticated)
 
 // Navigation helper
 const goTo = (routeName) => {
   router.push({ name: routeName })
+}
+
+
+function toggleAuthentication() {
+  isAuthenticated.value = !isAuthenticated.value
+
+  if (isAuthenticated.value) {
+    TokenService.logout();
+    router.push('/').catch(() => {})
+  } else {
+    // logged out -> go to home
+    router.push('/welcome').catch(() => {})
+  }
 }
 </script>
 
