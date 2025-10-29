@@ -2,31 +2,25 @@ import { defineStore } from 'pinia';
 import api from '../services/api';   
 import api_2 from '../services/api_2'; 
 
-export const useUsersStore = defineStore('users', {
+export const useRolesStore = defineStore('roles', {
   state: () => ({
-    users: [],
+    roles: [],
     // dialogs & UI state
     dialog: false,
     dialogDelete: false,
-    // editedIndex will hold the user id when editing, -1 when creating
+    // editedIndex will hold the role id when editing, -1 when creating
     editedIndex: -1,
     editedItem: {
       id: '',
       name: '',
-      email: '',
-      password: '',
-      is_active: true,
-      role_id: null,
-      user_image: null, // stored path
+      slug: '',
+      description: '',
     },
     defaultItem: {
       id: '',
       name: '',
-      email: '',
-      password: '',
-      is_active: true,
-      role_id: null,
-      user_image: null,
+      slug: '',
+      description: '',
     },
     // snackbars
     snackbarCreate: false,
@@ -37,56 +31,56 @@ export const useUsersStore = defineStore('users', {
   }),
 
   actions: {
-    async fetchUsers() {
+    async fetchRoles() {
       try {
-        const resp = await api.get('/getUser');
+        const resp = await api.get('/getRoles');
         // Expect array
-        this.users = resp.data.User;
+        this.roles = resp.data.Roles;
       } catch (err) {
-        console.error('fetchUsers error', err);
+        console.error('fetchRoles error', err);
       }
     },
 
-    async createUser(formData) {
+    async createRole(formData) {
       try {
-        const resp = await api_2.post('/saveUser', formData);
-        // if API returns created user object, push it otherwise re-fetch
+        const resp = await api_2.post('/saveRole', formData);
+        // if API returns created role object, push it otherwise re-fetch
         if (resp && resp.data) {
-          this.users.unshift(resp.data);
+          this.roles.unshift(resp.data);
         } else {
-          await this.fetchUsers();
+          await this.fetchRoles();
         }
         this.snackbarCreate = true;
       } catch (err) {
-        console.error('createUser error', err);
+        console.error('createRole error', err);
         throw err;
       }
     },
 
-    async updateUser(id, formData) {
+    async updateRole(id, formData) {
       try {
-        const resp = await api_2.post(`/updateUser/${id}`, formData);
+        const resp = await api_2.post(`/updateRole/${id}`, formData);
         if (resp && resp.data) {
-          const idx = this.users.findIndex(u => u.id == id);
-          if (idx !== -1) this.users.splice(idx, 1, resp.data);
+          const idx = this.roles.findIndex(u => u.id == id);
+          if (idx !== -1) this.roles.splice(idx, 1, resp.data);
         } else {
-          await this.fetchUsers();
+          await this.fetchRoles();
         }
         this.snackbarUpdate = true;
       } catch (err) {
-        console.error('updateUser error', err);
+        console.error('updateRole error', err);
         throw err;
       }
     },
 
-    async deleteUser(id) {
+    async deleteRole(id) {
       try {
-        await api_2.delete(`/deleteUser/${id}`);
-        const idx = this.users.findIndex(u => u.id == id);
-        if (idx !== -1) this.users.splice(idx, 1);
+        await api_2.delete(`/deleteRole/${id}`);
+        const idx = this.roles.findIndex(u => u.id == id);
+        if (idx !== -1) this.roles.splice(idx, 1);
         this.snackbarDelete = true;
       } catch (err) {
-        console.error('deleteUser error', err);
+        console.error('deleteRole error', err);
         throw err;
       } finally {
         this.dialogDelete = false;
@@ -96,19 +90,16 @@ export const useUsersStore = defineStore('users', {
 
     async editItem(id) {
       try {
-        // Get single user from API
-        const resp = await api.get(`/getUser/${id}`);
-        const data = resp.data.User;
+        // Get single role from API
+        const resp = await api.get(`/getRole/${id}`);
+        const data = resp.data.Role;
         // normalise to editedItem shape
         this.editedIndex = id;
         this.editedItem = {
           id: data.id,
           name: data.name || '',
-          email: data.email || '',
-          password: '', // leave blank for update
-          is_active: data.is_active ?? true,
-          role_id: data.role_id ?? null,
-          user_image: data.user_image ?? null,
+          slug: data.slug || '',
+          description: data.description || '', 
         };
         this.dialog = true;
       } catch (err) {

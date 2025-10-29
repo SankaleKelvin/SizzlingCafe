@@ -48,7 +48,7 @@
     </v-data-table>
 
     <!-- Create / Edit Dialog -->
-    <v-dialog v-model="dialog" max-width="600px" @click:outside="closeDialog">
+    <v-dialog v-model="usersStore.dialog" max-width="600px" @click:outside="closeDialog">
       <v-card>
         <v-card-title>
           <span class="text-h5">{{ formTitle }}</span>
@@ -58,14 +58,14 @@
           <v-container>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedItem.name" label="Name"></v-text-field>
+                <v-text-field v-model="usersStore.editedItem.name" label="Name"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedItem.email" label="Email"></v-text-field>
+                <v-text-field v-model="usersStore.editedItem.email" label="Email"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="editedItem.password"
+                  v-model="usersStore.editedItem.password"
                   label="Password"
                   type="password"
                   :hint="passwordHint"
@@ -73,8 +73,8 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                  :items="roleOptions"
-                  v-model="editedItem.role_id"
+                  :items="rolesStore.roles"
+                  v-model="usersStore.editedItem.role_id"
                   label="Role"
                   item-value="id"
                   item-title="name"
@@ -83,20 +83,23 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-switch v-model="editedItem.is_active" label="Active"></v-switch>
+                <v-switch v-model="usersStore.editedItem.is_active" label="Active"></v-switch>
               </v-col>
 
               <v-col cols="12" md="6">
                 <v-file-input
-                  v-model="image"
+                  v-model="usersStore.editedItem.user_image"
                   label="Upload Image"
                   accept="image/*"
                   show-size
+                  @change="onFileChange"
                 ></v-file-input>
+
+                <!-- preview: new file if selected, otherwise existing image -->
                 <v-img v-if="filePreview" :src="filePreview" width="200" height="200"></v-img>
                 <v-img
-                  v-else-if="editedItem.user_image"
-                  :src="getImageUrl(editedItem.user_image)"
+                  v-else-if="usersStore.editedItem.user_image"
+                  :src="getImageUrl(usersStore.editedItem.user_image)"
                   width="200"
                   height="200"
                 ></v-img>
@@ -130,9 +133,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useUsersStore } from '@/stores/users'
+import { useRolesStore } from '@/stores/roles'
 import { useColorsStore } from '@/stores/colors'
 
 const usersStore = useUsersStore()
+const rolesStore = useRolesStore()
 const colors = useColorsStore()
 
 // local reactive refs
@@ -173,7 +178,7 @@ const headers = [
 ]
 
 // replace with roles source if available. For now an empty array
-const roleOptions = ref([])
+const BASE = import.meta.env.VITE_BASE_URL || 'http://127.0.0.1:8000';
 
 // preview computed
 const filePreview = computed(() => {
@@ -183,7 +188,8 @@ const filePreview = computed(() => {
 
 const getImageUrl = (path) => {
   if (!path) return null
-  return `${process.env.VUE_APP_BASE_URL}/storage/${path}`
+  return `${BASE}/storage/${path}`
+  // return `http://localhost:8000/storage/${path}`
 }
 
 const passwordHint = computed(() =>
@@ -193,6 +199,9 @@ const passwordHint = computed(() =>
 // lifecycle
 onMounted(() => {
   usersStore.fetchUsers()
+  rolesStore.fetchRoles()
+  // optionally fetch roleOptions here if you have an API
+  // rolesApi.get('roles').then((r) => (roleOptions.value = r.data))
 })
 
 // actions
@@ -230,10 +239,12 @@ async function save() {
   fd.append('is_active', editedItem.value.is_active ? '1' : '0')
   if (editedItem.value.role_id) fd.append('role_id', editedItem.value.role_id)
 
-  if (image.value) {
+  if (editedItem.value.user_image) {
     // support either File or File[] (v-file-input returns array by default)
-    const file = Array.isArray(image.value) ? image.value[0] : image.value
-    fd.append('image', file)
+    const file = Array.isArray(editedItem.value.user_image)
+      ? editedItem.value.user_image[0]
+      : editedItem.value.user_image
+    fd.append('user_image', file)
   }
 
   try {
