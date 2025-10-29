@@ -119,8 +119,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useUsersStore } from '@/store/users';
-import { useColorsStore } from '@/store/colors';
+import { useUsersStore } from '@/stores/users';
+import { useColorsStore } from '@/stores/colors';
 
 const usersStore = useUsersStore();
 const colors = useColorsStore();

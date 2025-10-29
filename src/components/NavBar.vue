@@ -127,14 +127,12 @@ const shouldShowFooter = computed(() => {
   return route.name !== 'Home'
 })
 
-// toggle authentication (keeps the simple local toggle behavior)
-// you can replace this with auth store logic if needed
 function toggleAuthentication() {
   authenticated.value = !authenticated.value
 
   if (authenticated.value) {
     // logged in -> go to designation
-    router.push('/designation').catch(() => {})
+    router.push('/login').catch(() => {})
   } else {
     // logged out -> go to home
     router.push('/').catch(() => {})
