@@ -90,70 +90,54 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useColorsStore } from '../stores/colors';
+import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useColorsStore } from '../stores/colors'
 
-const router = useRouter();
-const route = useRoute();
-const colors = useColorsStore();
+const router = useRouter()
+const route = useRoute()
+const colors = useColorsStore()
 
 // local state
-const drawer = ref(true);
-const authenticated = ref(false);
+const drawer = ref(true)
+const authenticated = ref(false)
 
 // links (same shape as your original)
 const links = ref([
   { icon: 'mdi-home', text: 'Home', route: '/' },
   {
     icon: 'mdi-tools',
-    text: 'Configs',
-    route: '/designation',
+    text: 'User Access',
     children: [
       { icon: 'mdi-account-card', text: 'Users', route: '/users' },
-      { icon: 'mdi-clipboard-text', text: 'Roles', route: '/tasks' },
+      { icon: 'mdi-clipboard-text', text: 'Roles', route: '/roles' },
       { icon: 'mdi-progress-wrench', text: 'Categories', route: '/categories' },
     ],
   },
-  { icon: 'mdi-account', text: 'Staff', route: '/staffs' },
-  {
-    icon: 'mdi-briefcase',
-    text: 'Projects',
-    route: '/projects',
-    children: [
-      { icon: 'mdi-briefcase-outline', text: 'Manage', route: '/project_management' },
-    ],
-  },
-  {
-    icon: 'mdi-email',
-    text: 'Emails',
-    route: '/messages',
-    children: [{ icon: 'mdi-pencil-box', text: 'Replies', route: '/email_replies' }],
-  },
-  { icon: 'mdi-handshake', text: 'Partners', route: '/partners' },
-]);
+  { icon: 'mdi-account', text: 'Restaurant', route: '/restaurant' },
+])
 
 // computed color from store
-const computedColor = computed(() => colors.footerColor);
+const computedColor = computed(() => colors.footerColor)
 
 // show footer logic (mirrors your computed)
 const shouldShowFooter = computed(() => {
   // hide on Home route name, otherwise show
   // if route.name is undefined you might want to compare path instead
-  return route.name !== 'Home';
-});
+  return route.name !== 'Home'
+})
 
 // toggle authentication (keeps the simple local toggle behavior)
 // you can replace this with auth store logic if needed
 function toggleAuthentication() {
-  authenticated.value = !authenticated.value;
+  authenticated.value = !authenticated.value
 
   if (authenticated.value) {
     // logged in -> go to designation
-    router.push('/designation').catch(() => {});
+    router.push('/designation').catch(() => {})
   } else {
     // logged out -> go to home
-    router.push('/').catch(() => {});
+    router.push('/').catch(() => {})
   }
 }
 </script>
