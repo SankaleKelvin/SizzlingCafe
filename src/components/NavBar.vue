@@ -114,7 +114,7 @@ const links = ref([
       { icon: 'mdi-progress-wrench', text: 'Categories', route: '/categories' },
     ],
   },
-  { icon: 'mdi-account', text: 'Restaurant', route: '/restaurant' },
+  { icon: 'mdi-account', text: 'Restaurant', route: '/restaurants' },
 ])
 
 // computed color from store

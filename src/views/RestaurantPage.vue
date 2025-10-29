@@ -2,28 +2,28 @@
   <v-container>
     <!-- Snackbars -->
     <v-snackbar v-model="snackbarCreate" :timeout="snackbarTimeout" color="success">
-      Role created successfully.
+      Restaurant created successfully.
       <v-btn text @click="snackbarCreate = false">Close</v-btn>
     </v-snackbar>
 
     <v-snackbar v-model="snackbarUpdate" :timeout="snackbarTimeout" color="warning">
-      Role updated successfully.
+      Restaurant updated successfully.
       <v-btn text @click="snackbarUpdate = false">Close</v-btn>
     </v-snackbar>
 
     <v-snackbar v-model="snackbarDelete" :timeout="snackbarTimeout" color="error">
-      Role deleted successfully.
+      Restaurant deleted successfully.
       <v-btn text @click="snackbarDelete = false">Close</v-btn>
     </v-snackbar>
 
     <!-- Data table -->
-    <v-data-table :headers="headers" :items="rolesStore.roles" class="elevation-1">
+    <v-data-table :headers="headers" :items="restaurantsStore.restaurants" class="elevation-1">
       <template v-slot:top>
         <v-toolbar flat color="blue">
-          <v-toolbar-title>Roles</v-toolbar-title>
+          <v-toolbar-title>Restaurants</v-toolbar-title>
           <v-spacer></v-spacer>
 
-          <v-btn color="white" style="background-color:gray;" @click="openCreate">New Role</v-btn>
+          <v-btn color="white" style="background-color:gray;" @click="openCreate">New Restaurant</v-btn>
         </v-toolbar>
       </template>
 
@@ -38,7 +38,7 @@
     </v-data-table>
 
     <!-- Create / Edit Dialog -->
-    <v-dialog v-model="rolesStore.dialog" max-width="600px" @click:outside="closeDialog">
+    <v-dialog v-model="restaurantsStore.dialog" max-width="600px" @click:outside="closeDialog">
       <v-card>
         <v-card-title>
           <span class="text-h5">{{ formTitle }}</span>
@@ -48,10 +48,13 @@
           <v-container>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model="rolesStore.editedItem.name" label="Name"></v-text-field>
+                <v-text-field v-model="restaurantsStore.editedItem.name" label="Name"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model="rolesStore.editedItem.slug" label="Slug"></v-text-field>                            
+                <v-text-field v-model="restaurantsStore.editedItem.address" label="Address"></v-text-field>                            
+              </v-col>
+              <v-col cols="12" md="12">
+                <v-textarea v-model="restaurantsStore.editedItem.description" label="Description"></v-textarea>                            
               </v-col>
             </v-row>
           </v-container>
@@ -81,10 +84,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRolesStore } from '@/stores/roles'
+import { useRestaurantsStore } from '@/stores/restaurants'
 import { useColorsStore } from '@/stores/colors'
 
-const rolesStore = useRolesStore()
+const restaurantsStore = useRestaurantsStore()
 const colors = useColorsStore()
 
 // local reactive refs
@@ -92,39 +95,39 @@ const image = ref(null)
 const snackbarTimeout = 1500
 
 const snackbarCreate = computed({
-  get: () => rolesStore.snackbarCreate,
-  set: (v) => (rolesStore.snackbarCreate = v),
+  get: () => restaurantsStore.snackbarCreate,
+  set: (v) => (restaurantsStore.snackbarCreate = v),
 })
 const snackbarUpdate = computed({
-  get: () => rolesStore.snackbarUpdate,
-  set: (v) => (rolesStore.snackbarUpdate = v),
+  get: () => restaurantsStore.snackbarUpdate,
+  set: (v) => (restaurantsStore.snackbarUpdate = v),
 })
 const snackbarDelete = computed({
-  get: () => rolesStore.snackbarDelete,
-  set: (v) => (rolesStore.snackbarDelete = v),
+  get: () => restaurantsStore.snackbarDelete,
+  set: (v) => (restaurantsStore.snackbarDelete = v),
 })
 
 const dialog = computed({
-  get: () => rolesStore.dialog,
-  set: (v) => (rolesStore.dialog = v),
+  get: () => restaurantsStore.dialog,
+  set: (v) => (restaurantsStore.dialog = v),
 })
 const dialogDelete = computed({
-  get: () => rolesStore.dialogDelete,
-  set: (v) => (rolesStore.dialogDelete = v),
+  get: () => restaurantsStore.dialogDelete,
+  set: (v) => (restaurantsStore.dialogDelete = v),
 })
 
-const roles = computed(() => rolesStore.roles)
-const editedItem = computed(() => rolesStore.editedItem)
-const formTitle = computed(() => (rolesStore.editedIndex === -1 ? 'New Role' : 'Edit Role'))
+const restaurants = computed(() => restaurantsStore.restaurants)
+const editedItem = computed(() => restaurantsStore.editedItem)
+const formTitle = computed(() => (restaurantsStore.editedIndex === -1 ? 'New Restaurant' : 'Edit Restaurant'))
 
 const headers = [
   { title: 'ID', key: 'id', sortable: true, align: 'start' },
   { title: 'Name', key: 'name', sortable: true },
-  { title: 'Slug', key: 'slug', sortable: true },
+  { title: 'Address', key: 'address', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
-// replace with roles source if available. For now an empty array
+// replace with restaurants source if available. For now an empty array
 const BASE = import.meta.env.VITE_BASE_URL || 'http://127.0.0.1:8000';
 
 // preview computed
@@ -140,49 +143,50 @@ const getImageUrl = (path) => {
 }
 
 const passwordHint = computed(() =>
-  rolesStore.editedIndex === -1 ? 'Required' : 'Leave blank to keep current',
+  restaurantsStore.editedIndex === -1 ? 'Required' : 'Leave blank to keep current',
 )
 
 // lifecycle
 onMounted(() => {
-  rolesStore.fetchRoles()
-  rolesStore.fetchRoles()
+  restaurantsStore.fetchRestaurants()
+  restaurantsStore.fetchRestaurants()
 })
 
 // actions
 function openCreate() {
-  rolesStore.openDialog()
+  restaurantsStore.openDialog()
   image.value = null
 }
 
 async function onEdit(id) {
-  await rolesStore.editItem(id)
+  await restaurantsStore.editItem(id)
   image.value = null
 }
 
 function onDelete(id) {
-  rolesStore.openDelete(id)
+  restaurantsStore.openDelete(id)
 }
 
 function closeDialog() {
-  rolesStore.closeDialog()
+  restaurantsStore.closeDialog()
   image.value = null
 }
 
 function closeDelete() {
-  rolesStore.closeDelete()
+  restaurantsStore.closeDelete()
 }
 
 async function save() {
   // build FormData
   const fd = new FormData()
   fd.append('name', editedItem.value.name || '')
-  fd.append('slug', editedItem.value.slug || '')
+  fd.append('address', editedItem.value.address || '')
+  fd.append('description', editedItem.value.description || '')
 
   try {
-    if (rolesStore.editedIndex > -1) {
+    if (restaurantsStore.editedIndex > -1) {
       // update
-      await rolesStore.updateRole(rolesStore.editedIndex, fd)
+      await restaurantsStore.updateRestaurant(restaurantsStore.editedIndex, fd)
       snackbarUpdate.value = true
       colors.setFooterColor('warning') // optional
     } else {
@@ -192,14 +196,14 @@ async function save() {
         // you can show an error or return
         console.warn('Password required for create')
       }
-      await rolesStore.createRole(fd)
+      await restaurantsStore.createRestaurant(fd)
       snackbarCreate.value = true
       colors.setFooterColor('success') // optional
     }
 
     // refresh list to ensure consistent state
-    await rolesStore.fetchRoles()
-    rolesStore.closeDialog()
+    await restaurantsStore.fetchRestaurants()
+    restaurantsStore.closeDialog()
   } catch (err) {
     console.error('save error', err)
   } finally {
@@ -211,18 +215,18 @@ async function save() {
 }
 
 async function confirmDelete() {
-  if (!rolesStore.deletingId) return
+  if (!restaurantsStore.deletingId) return
   try {
-    await rolesStore.deleteRole(rolesStore.deletingId)
+    await restaurantsStore.deleteRestaurant(restaurantsStore.deletingId)
     snackbarDelete.value = true
   } catch (err) {
     console.error('confirmDelete error', err)
   } finally {
-    await rolesStore.fetchRoles()
+    await restaurantsStore.fetchRestaurants()
   }
 }
 
 function refresh() {
-  rolesStore.fetchRoles()
+  restaurantsStore.fetchRestaurants()
 }
 </script>
