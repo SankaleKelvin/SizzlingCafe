@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <v-container>
     <!-- Snackbars -->
     <v-snackbar v-model="snackbarCreate" :timeout="snackbarTimeout" color="success">
       User created successfully.
@@ -127,7 +127,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-main>
+  </v-container>
 </template>
 
 <script setup>
@@ -200,8 +200,6 @@ const passwordHint = computed(() =>
 onMounted(() => {
   usersStore.fetchUsers()
   rolesStore.fetchRoles()
-  // optionally fetch roleOptions here if you have an API
-  // rolesApi.get('roles').then((r) => (roleOptions.value = r.data))
 })
 
 // actions

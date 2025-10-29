@@ -6,6 +6,7 @@ import WelcomePage from '@/views/WelcomePage.vue'
 import TokenService from '@/services/TokenService'
 import UsersPage from '@/views/UsersPage.vue'
 import SignupPage from '@/views/SignupPage.vue'
+import RolesPage from '@/views/RolesPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,6 +43,14 @@ const router = createRouter({
       path: '/users',
       name: 'UsersPage',      
       component: UsersPage,
+      meta:{
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/roles',
+      name: 'RolesPage',      
+      component: RolesPage,
       meta:{
         requiresAuth: true
       }

@@ -14,13 +14,11 @@ export const useRolesStore = defineStore('roles', {
       id: '',
       name: '',
       slug: '',
-      description: '',
     },
     defaultItem: {
       id: '',
       name: '',
       slug: '',
-      description: '',
     },
     // snackbars
     snackbarCreate: false,
@@ -99,7 +97,6 @@ export const useRolesStore = defineStore('roles', {
           id: data.id,
           name: data.name || '',
           slug: data.slug || '',
-          description: data.description || '', 
         };
         this.dialog = true;
       } catch (err) {
