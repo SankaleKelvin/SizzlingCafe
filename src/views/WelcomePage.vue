@@ -16,7 +16,7 @@
             block
             color="blue"
             dark
-            @click="goTo('login')"
+            @click="goTo('LoginPage')"
             prepend-icon="mdi-login"
           >
             Login
@@ -28,7 +28,7 @@
             block
             color="green"
             dark
-            @click="goTo('register')"
+            @click="goTo('SignupPage')"
             prepend-icon="mdi-account-plus"
           >
             Register

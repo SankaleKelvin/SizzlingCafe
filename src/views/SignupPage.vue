@@ -1,83 +1,39 @@
 <template>
-  <div class="container">
-    <h1>Enter User Details</h1>
-    <form @submit.prevent="register">
-      <div class="form-group">
-        <label for="name">Username</label>
-        <input type="text" id="name" v-model="name" required />
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" v-model="email" required />
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" v-model="password" required />
-      </div>
-
-      <div class="form-group">
-        <label for="passwordConfirmation">Confirm Password</label>
-        <input type="password" id="passwordConfirmation" v-model="passwordConfirmation" required />
-      </div>
-
-      <div class="form-group">
-        <label for="roles">Roles</label>
-        <ul class="badge-list">
-          <li
-            v-for="role in roles"
-            :key="role.id"
-            class="badge-item"
-            @click="addToAwaitingRequest(role)"
-            style="cursor:pointer"
-          >
-            <span class="badge">{{ role.name }}</span>
-          </li>
-        </ul>
-      </div>
-
-      <div>
-        <h2>Awaiting Request</h2>
-        <ul>
-          <li v-for="selectedRole in selectedRoles" :key="selectedRole.id">
-            {{ selectedRole.name }}
-            <button type="button" @click="removeFromAwaitingRequest(selectedRole)">X</button>
-          </li>
-        </ul>
-      </div>
-
-      <div class="button-container">
-        <button type="submit">Register</button>
-        <button class="btn btn-warning" type="button" @click="resetForm">Reset</button>
-      </div>
-    </form>
-  </div>
+  <v-container class="login-container mt-5">
+    <v-row justify="center">
+      <v-col cols="12" md="6">
+        <v-card class="pa-4">
+          <v-card-title class="headline">Please Sign Up ...</v-card-title>
+          <form @submit.prevent="register">
+            <v-text-field label="Username" v-model="name" required />
+            <v-text-field label="email" type="email" v-model="email" required />
+            <v-text-field label="Password" type="password" v-model="password" required />
+            <v-text-field
+              label="Password Confirmation"
+              type="password"
+              v-model="password_confirmation"
+              required
+            />
+            <v-btn type="submit" color="primary">Sign Up</v-btn>
+            <v-btn text @click="login">Already registered? Login</v-btn>
+          </form>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
-import '../assets/css/login.css';
+import { ref, onMounted } from 'vue'
+import '../assets/css/login.css'
+import api from '../services/api';
 
 // reactive state
-const name = ref('');
-const email = ref('');
-const password = ref('');
-const passwordConfirmation = ref('');
-const roles = ref([]);
-const selectedRoles = ref([]);
+const name = ref('')
+const email = ref('')
+const password = ref('')
+const password_confirmation = ref('')
 
-// fetch roles
-async function getAllRoles() {
-  try {
-    const response = await axios.get('http://127.0.0.1:8000/api/role');
-    // If your API wraps data (e.g. { data: [...] }) adapt accordingly
-    roles.value = response.data;
-  } catch (error) {
-    console.error('Fetching roles error:', error);
-  }
-}
 
 // register user
 async function register() {
@@ -86,53 +42,27 @@ async function register() {
       name: name.value,
       email: email.value,
       password: password.value,
-      password_confirmation: passwordConfirmation.value,
-    };
-
-    if (selectedRoles.value.length > 0) {
-      userPayload.roles = selectedRoles.value.map(role => ({
-        id: role.id,
-        pivot: {
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      }));
+      password_confirmation: password_confirmation.value,
     }
 
-    const response = await axios.post('http://127.0.0.1:8000/api/register', userPayload);
+    const response = await api.post('/register', userPayload)
 
-    console.log('User registered:', response.data);
+    console.log('User registered:', response.data)
 
     // Clear form after success
-    resetForm();
+    resetForm()
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error:', error)
   }
 }
 
 function resetForm() {
-  name.value = '';
-  email.value = '';
-  password.value = '';
-  passwordConfirmation.value = '';
-  selectedRoles.value = [];
+  name.value = ''
+  email.value = ''
+  password.value = ''
+  password_confirmation.value = ''
 }
 
-function addToAwaitingRequest(role) {
-  if (!selectedRoles.value.some(r => r.id === role.id)) {
-    selectedRoles.value.push(role);
-  }
-}
-
-function removeFromAwaitingRequest(selectedRole) {
-  const idx = selectedRoles.value.findIndex(r => r.id === selectedRole.id);
-  if (idx !== -1) selectedRoles.value.splice(idx, 1);
-}
-
-// lifecycle
-onMounted(() => {
-  getAllRoles();
-});
 </script>
 
 <style scoped>

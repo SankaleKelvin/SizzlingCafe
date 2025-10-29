@@ -68,14 +68,14 @@ async function login() {
     password.value = '';
 
     console.log('Login successful');
-    router.push('/designation');
+    router.push('/welcome');
   } catch (error) {
     console.error('Login failed', error);
   }
 }
 
 function register() {
-  router.push('/register');
+  router.push('/signup');
 }
 </script>
 
