@@ -56,7 +56,7 @@
     </v-list>
   </v-navigation-drawer>
 
-  <v-app-bar color="blue" dark app v-if="shouldShowFooter">
+  <v-app-bar color="blue" dark app>
     <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
     <v-toolbar-title class="text-uppercase">
       <span class="font-weight-light">Sizzling Cafe</span>
@@ -93,6 +93,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useColorsStore } from '../stores/colors'
+import TokenService from '@/services/TokenService'
 
 const router = useRouter()
 const route = useRoute()
@@ -122,20 +123,16 @@ const computedColor = computed(() => colors.footerColor)
 
 // show footer logic (mirrors your computed)
 const shouldShowFooter = computed(() => {
-  // hide on Home route name, otherwise show
-  // if route.name is undefined you might want to compare path instead
+  // authenticated.value = !!TokenService.getToken()
   return route.name !== 'Home'
 })
 
 function toggleAuthentication() {
-  authenticated.value = !authenticated.value
-
+  
   if (authenticated.value) {
-    // logged in -> go to designation
-    router.push('/login').catch(() => {})
+    router.push('/login')
   } else {
-    // logged out -> go to home
-    router.push('/').catch(() => {})
+    router.push('/login')
   }
 }
 </script>

@@ -8,6 +8,7 @@ import UsersPage from '@/views/UsersPage.vue'
 import SignupPage from '@/views/SignupPage.vue'
 import RolesPage from '@/views/RolesPage.vue'
 import RestaurantPage from '@/views/RestaurantPage.vue'
+import CategoriesPage from '@/views/CategoriesPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,6 +61,14 @@ const router = createRouter({
       path: '/restaurants',
       name: 'RestaurantsPage',      
       component: RestaurantPage,
+      meta:{
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/categories',
+      name: 'CategoriesPage',      
+      component: CategoriesPage,
       meta:{
         requiresAuth: true
       }
