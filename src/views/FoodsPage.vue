@@ -79,7 +79,7 @@
                   label="Restaurant"
                   item-value="id"
                   item-title="name"
-                  return-object="false"
+                  :return-object="false"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="6">
@@ -89,7 +89,7 @@
                   label="Categories"
                   item-value="id"
                   item-title="name"
-                  return-object="false"
+                  :return-object="false"
                 ></v-select>
               </v-col>
 

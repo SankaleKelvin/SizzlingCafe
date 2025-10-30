@@ -78,7 +78,7 @@
                   label="Role"
                   item-value="id"
                   item-title="name"
-                  return-object="false"
+                  :return-object="false"
                 ></v-select>
               </v-col>
 
@@ -171,7 +171,7 @@ const editedItem = computed(() => usersStore.editedItem)
 const formTitle = computed(() => (usersStore.editedIndex === -1 ? 'New User' : 'Edit User'))
 
 const headers = [
-  { title: 'Photo', key: 'user_image', sortable: false, align: 'start' },
+  { title: '', key: 'user_image', sortable: false, align: 'start' },
   { title: 'Name', key: 'name', sortable: true },
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false },
@@ -260,7 +260,7 @@ async function save() {
       }
       await usersStore.createUser(fd)
       snackbarCreate.value = true
-      colors.setFooterColor('success') // optional
+      colors.setFooterColor('success') 
     }
 
     // refresh list to ensure consistent state
