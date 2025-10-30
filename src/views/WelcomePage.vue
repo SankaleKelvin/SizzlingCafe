@@ -6,7 +6,7 @@
     <v-card elevation="8" max-width="600" class="pa-8 text-center rounded-xl">
       <v-img src="/img1.png" max-width="120" class="mx-auto mb-4"></v-img>
 
-      <h1 class="text-h4 font-weight-bold mb-3">Welcome {{ username.name }}! <br/> To Sizzling Cafe</h1>
+      <h1 class="text-h4 font-weight-bold mb-3">Welcome! <br/> To Sizzling Cafe</h1>
       <p class="text-body-1 mb-6">Welcome for a variety of meals.</p>
 
       <v-divider class="my-4"></v-divider>
@@ -48,34 +48,34 @@
 </template>
 
 <script setup>
-import TokenService from '@/services/TokenService'
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { computed, onMounted } from 'vue'
+import TokenService from '@/services/TokenService'
 
+const authStore = useAuthStore()
 const router = useRouter()
-const username = computed(() => TokenService.getUser())
-
-
-// Check login status from token service
-const isAuthenticated = computed(() => TokenService.isAuthenticated)
+const isAuthenticated = computed(()=>!!authStore.token)
 
 // Navigation helper
 const goTo = (routeName) => {
   router.push({ name: routeName })
 }
 
-
 function toggleAuthentication() {
-  isAuthenticated.value = !isAuthenticated.value
-
-  if (isAuthenticated.value) {
-    TokenService.logout();
-    router.push('/').catch(() => {})
-  } else {
-    // logged out -> go to home
-    router.push('/welcome').catch(() => {})
+  if(isAuthenticated){
+    TokenService.logout()
+    router.push('/login')
   }
 }
+onMounted(()=>{
+  if (!sessionStorage.getItem('reloaded')) {
+    sessionStorage.setItem('reloaded', 'true')
+    window.location.reload()
+  } else {
+    sessionStorage.removeItem('reloaded')
+  }
+})
 </script>
 
 <style scoped>

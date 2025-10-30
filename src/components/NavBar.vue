@@ -5,7 +5,7 @@
     dark
     app
     class="red darken-4"
-    v-if="shouldShowFooter"
+    v-if="authenticated"
   >
     <v-layout column align-center>
       <v-flex class="my-2 mx-auto text-center">
@@ -91,17 +91,18 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useColorsStore } from '../stores/colors'
+import { useAuthStore } from '@/stores/auth'
 import TokenService from '@/services/TokenService'
 
 const router = useRouter()
-const route = useRoute()
+const authStore = useAuthStore()
 const colors = useColorsStore()
 
 // local state
 const drawer = ref(true)
-const authenticated = ref(false)
+const authenticated = computed(()=>!!authStore.token)
 
 // links (same shape as your original)
 const links = ref([
@@ -109,6 +110,7 @@ const links = ref([
   {
     icon: 'mdi-tools',
     text: 'User Access',
+    route: '/users',
     children: [
       { icon: 'mdi-account-card', text: 'Users', route: '/users' },
       { icon: 'mdi-clipboard-text', text: 'Roles', route: '/roles' },
@@ -116,20 +118,17 @@ const links = ref([
     ],
   },
   { icon: 'mdi-account', text: 'Restaurant', route: '/restaurants' },
+  { icon: 'mdi-account', text: 'Food', route: '/food' },
 ])
 
 // computed color from store
 const computedColor = computed(() => colors.footerColor)
 
-// show footer logic (mirrors your computed)
-const shouldShowFooter = computed(() => {
-  // authenticated.value = !!TokenService.getToken()
-  return route.name !== 'Home'
-})
 
 function toggleAuthentication() {
-  
-  if (authenticated.value) {
+  alert(authenticated.value)
+  if(authenticated.value) {
+    TokenService.logout()
     router.push('/login')
   } else {
     router.push('/login')

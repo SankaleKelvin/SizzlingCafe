@@ -2,38 +2,38 @@
   <v-container>
     <!-- Snackbars -->
     <v-snackbar v-model="snackbarCreate" :timeout="snackbarTimeout" color="success">
-      User created successfully.
+      Food created successfully.
       <v-btn text @click="snackbarCreate = false">Close</v-btn>
     </v-snackbar>
 
     <v-snackbar v-model="snackbarUpdate" :timeout="snackbarTimeout" color="warning">
-      User updated successfully.
+      Food updated successfully.
       <v-btn text @click="snackbarUpdate = false">Close</v-btn>
     </v-snackbar>
 
     <v-snackbar v-model="snackbarDelete" :timeout="snackbarTimeout" color="error">
-      User deleted successfully.
+      Food deleted successfully.
       <v-btn text @click="snackbarDelete = false">Close</v-btn>
     </v-snackbar>
 
     <!-- Data table -->
-    <v-data-table :headers="headers" :items="usersStore.users" class="elevation-1">
+    <v-data-table :headers="headers" :items="foodsStore.foods" class="elevation-1">
       <template v-slot:top>
-        <v-toolbar flat color="transparent">
-          <v-toolbar-title>Users</v-toolbar-title>
+        <v-toolbar flat color="primary">
+          <v-toolbar-title>Foods</v-toolbar-title>
           <v-spacer></v-spacer>
 
-          <v-btn color="primary" @click="openCreate">New User</v-btn>
+          <v-btn color="white" style="background-color: grey;" @click="openCreate">New Food</v-btn>
         </v-toolbar>
       </template>
 
-      <template v-slot:[`item.user_image`]="{ item }">
+      <template v-slot:[`item.food_image`]="{ item }">
         <v-img
-          :src="getImageUrl(item.user_image)"
-          alt="User"
+          :src="getImageUrl(item.food_image)"
+          alt="Food"
           width="48"
           height="48"
-          v-if="item.user_image"
+          v-if="item.food_image"
         ></v-img>
       </template>
 
@@ -48,7 +48,7 @@
     </v-data-table>
 
     <!-- Create / Edit Dialog -->
-    <v-dialog v-model="usersStore.dialog" max-width="600px" @click:outside="closeDialog">
+    <v-dialog v-model="foodsStore.dialog" max-width="600px" @click:outside="closeDialog">
       <v-card>
         <v-card-title>
           <span class="text-h5">{{ formTitle }}</span>
@@ -58,24 +58,35 @@
           <v-container>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model="usersStore.editedItem.name" label="Name"></v-text-field>
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field v-model="usersStore.editedItem.email" label="Email"></v-text-field>
+                <v-text-field v-model="foodsStore.editedItem.name" label="Name"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="usersStore.editedItem.password"
-                  label="Password"
-                  type="password"
-                  :hint="passwordHint"
+                  v-model="foodsStore.editedItem.food_code"
+                  label="Food Code"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="foodsStore.editedItem.price"
+                  label="Food Price"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                  :items="rolesStore.roles"
-                  v-model="usersStore.editedItem.role_id"
-                  label="Role"
+                  :items="restaurantsStore.restaurants"
+                  v-model="foodsStore.editedItem.restaurant_id"
+                  label="Restaurant"
+                  item-value="id"
+                  item-title="name"
+                  return-object="false"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  :items="categoriesStore.categories"
+                  v-model="foodsStore.editedItem.category_id"
+                  label="Categories"
                   item-value="id"
                   item-title="name"
                   return-object="false"
@@ -83,12 +94,8 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-switch v-model="usersStore.editedItem.is_active" label="Active"></v-switch>
-              </v-col>
-
-              <v-col cols="12" md="6">
                 <v-file-input
-                  v-model="usersStore.editedItem.user_image"
+                  v-model="foodsStore.editedItem.food_image"
                   label="Upload Image"
                   accept="image/*"
                   show-size
@@ -98,11 +105,18 @@
                 <!-- preview: new file if selected, otherwise existing image -->
                 <v-img v-if="filePreview" :src="filePreview" width="200" height="200"></v-img>
                 <v-img
-                  v-else-if="usersStore.editedItem.user_image"
-                  :src="getImageUrl(usersStore.editedItem.user_image)"
+                  v-else-if="foodsStore.editedItem.food_image"
+                  :src="getImageUrl(foodsStore.editedItem.food_image)"
                   width="200"
                   height="200"
                 ></v-img>
+              </v-col>
+
+              <v-col cols="12" md="12">
+                <v-textarea
+                  v-model="foodsStore.editedItem.description"
+                  label="Description"
+                ></v-textarea>
               </v-col>
             </v-row>
           </v-container>
@@ -132,12 +146,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useUsersStore } from '@/stores/users'
-import { useRolesStore } from '@/stores/roles'
+import { useFoodsStore } from '@/stores/foods'
+import { useRestaurantsStore } from '@/stores/restaurants'
 import { useColorsStore } from '@/stores/colors'
+import { useCategoriesStore } from '@/stores/categories'
 
-const usersStore = useUsersStore()
-const rolesStore = useRolesStore()
+const foodsStore = useFoodsStore()
+const restaurantsStore = useRestaurantsStore()
+const categoriesStore = useCategoriesStore()
 const colors = useColorsStore()
 
 // local reactive refs
@@ -145,40 +161,43 @@ const image = ref(null)
 const snackbarTimeout = 1500
 
 const snackbarCreate = computed({
-  get: () => usersStore.snackbarCreate,
-  set: (v) => (usersStore.snackbarCreate = v),
+  get: () => foodsStore.snackbarCreate,
+  set: (v) => (foodsStore.snackbarCreate = v),
 })
 const snackbarUpdate = computed({
-  get: () => usersStore.snackbarUpdate,
-  set: (v) => (usersStore.snackbarUpdate = v),
+  get: () => foodsStore.snackbarUpdate,
+  set: (v) => (foodsStore.snackbarUpdate = v),
 })
 const snackbarDelete = computed({
-  get: () => usersStore.snackbarDelete,
-  set: (v) => (usersStore.snackbarDelete = v),
+  get: () => foodsStore.snackbarDelete,
+  set: (v) => (foodsStore.snackbarDelete = v),
 })
 
 const dialog = computed({
-  get: () => usersStore.dialog,
-  set: (v) => (usersStore.dialog = v),
+  get: () => foodsStore.dialog,
+  set: (v) => (foodsStore.dialog = v),
 })
 const dialogDelete = computed({
-  get: () => usersStore.dialogDelete,
-  set: (v) => (usersStore.dialogDelete = v),
+  get: () => foodsStore.dialogDelete,
+  set: (v) => (foodsStore.dialogDelete = v),
 })
 
-const users = computed(() => usersStore.users)
-const editedItem = computed(() => usersStore.editedItem)
-const formTitle = computed(() => (usersStore.editedIndex === -1 ? 'New User' : 'Edit User'))
+const foods = computed(() => foodsStore.foods)
+const editedItem = computed(() => foodsStore.editedItem)
+const formTitle = computed(() => (foodsStore.editedIndex === -1 ? 'New Food' : 'Edit Food'))
 
 const headers = [
-  { title: 'Photo', key: 'user_image', sortable: false, align: 'start' },
+  { title: 'Image', key: 'food_image', sortable: false, align: 'start' },
   { title: 'Name', key: 'name', sortable: true },
-  { title: 'Email', key: 'email', sortable: true },
+  { title: 'Code', key: 'food_code', sortable: true },
+  { title: 'Price', key: 'price', sortable: true },
+  { title: 'Restaurant', key: 'restaurant_name', sortable: true },
+  { title: 'Category', key: 'category_name', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
 // replace with roles source if available. For now an empty array
-const BASE = import.meta.env.VITE_BASE_URL || 'http://127.0.0.1:8000';
+const BASE = import.meta.env.VITE_BASE_URL || 'http://127.0.0.1:8000'
 
 // preview computed
 const filePreview = computed(() => {
@@ -193,37 +212,38 @@ const getImageUrl = (path) => {
 }
 
 const passwordHint = computed(() =>
-  usersStore.editedIndex === -1 ? 'Required' : 'Leave blank to keep current',
+  foodsStore.editedIndex === -1 ? 'Required' : 'Leave blank to keep current',
 )
 
 // lifecycle
 onMounted(() => {
-  usersStore.fetchUsers()
-  rolesStore.fetchRoles()
+  foodsStore.fetchFoods()
+  restaurantsStore.fetchRestaurants()
+  categoriesStore.fetchCategories()
 })
 
 // actions
 function openCreate() {
-  usersStore.openDialog()
+  foodsStore.openDialog()
   image.value = null
 }
 
 async function onEdit(id) {
-  await usersStore.editItem(id)
+  await foodsStore.editItem(id)
   image.value = null
 }
 
 function onDelete(id) {
-  usersStore.openDelete(id)
+  foodsStore.openDelete(id)
 }
 
 function closeDialog() {
-  usersStore.closeDialog()
+  foodsStore.closeDialog()
   image.value = null
 }
 
 function closeDelete() {
-  usersStore.closeDelete()
+  foodsStore.closeDelete()
 }
 
 async function save() {
@@ -231,24 +251,24 @@ async function save() {
   const fd = new FormData()
   // include fields expected by backend
   fd.append('name', editedItem.value.name || '')
-  fd.append('email', editedItem.value.email || '')
-  // password: only append if provided (create requires, update optional)
-  if (editedItem.value.password) fd.append('password', editedItem.value.password)
-  fd.append('is_active', editedItem.value.is_active ? '1' : '0')
-  if (editedItem.value.role_id) fd.append('role_id', editedItem.value.role_id)
+  fd.append('food_code', editedItem.value.food_code || '')
+  fd.append('price', editedItem.value.price || '')
+  fd.append('description', editedItem.value.description || '')  
+  if (editedItem.value.restaurant_id) fd.append('restaurant_id', editedItem.value.restaurant_id)
+  if (editedItem.value.category_id) fd.append('category_id', editedItem.value.category_id)
 
-  if (editedItem.value.user_image) {
+  if (editedItem.value.food_image) {
     // support either File or File[] (v-file-input returns array by default)
-    const file = Array.isArray(editedItem.value.user_image)
-      ? editedItem.value.user_image[0]
-      : editedItem.value.user_image
-    fd.append('user_image', file)
+    const file = Array.isArray(editedItem.value.food_image)
+      ? editedItem.value.food_image[0]
+      : editedItem.value.food_image
+    fd.append('food_image', file)
   }
 
   try {
-    if (usersStore.editedIndex > -1) {
+    if (foodsStore.editedIndex > -1) {
       // update
-      await usersStore.updateUser(usersStore.editedIndex, fd)
+      await foodsStore.updateFood(foodsStore.editedIndex, fd)
       snackbarUpdate.value = true
       colors.setFooterColor('warning') // optional
     } else {
@@ -258,16 +278,16 @@ async function save() {
         // you can show an error or return
         console.warn('Password required for create')
       }
-      await usersStore.createUser(fd)
+      await foodsStore.createFood(fd)
       snackbarCreate.value = true
       colors.setFooterColor('success') // optional
     }
 
     // refresh list to ensure consistent state
-    await usersStore.fetchUsers()
+    await foodsStore.fetchFoods()
     // reset form
     image.value = null
-    usersStore.closeDialog()
+    foodsStore.closeDialog()
   } catch (err) {
     console.error('save error', err)
   } finally {
@@ -279,18 +299,18 @@ async function save() {
 }
 
 async function confirmDelete() {
-  if (!usersStore.deletingId) return
+  if (!foodsStore.deletingId) return
   try {
-    await usersStore.deleteUser(usersStore.deletingId)
+    await foodsStore.deleteFood(foodsStore.deletingId)
     snackbarDelete.value = true
   } catch (err) {
     console.error('confirmDelete error', err)
   } finally {
-    await usersStore.fetchUsers()
+    await foodsStore.fetchFoods()
   }
 }
 
 function refresh() {
-  usersStore.fetchUsers()
+  foodsStore.fetchFoods()
 }
 </script>

@@ -145,7 +145,6 @@ const passwordHint = computed(() =>
 // lifecycle
 onMounted(() => {
   categoriesStore.fetchCategories()
-  categoriesStore.fetchCategories()
 })
 
 // actions

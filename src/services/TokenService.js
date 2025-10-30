@@ -1,6 +1,7 @@
 import { ref } from "vue";
 
 const token = ref(localStorage.getItem('token'))
+
 class TokenService {
  
   static setToken(data) {
@@ -19,6 +20,7 @@ class TokenService {
 
   static logout(){
     localStorage.clear();
+
   }
 
   static isAuthenticated(){

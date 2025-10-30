@@ -17,65 +17,45 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import TokenService from '../services/TokenService';
-import api from '../services/api';
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import api from '../services/api'
+import router from '@/router'
 
-const router = useRouter();
+const authStore = useAuthStore()
 
-const username = ref('');
-const password = ref('');
-
-// on mount, if token exists redirect
-onMounted(() => {
-  const t = TokenService.getToken();
-  if (t !== null && t !== '') {
-    router.push('/welcome');
-  }
-});
+const username = ref('')
+const password = ref('')
 
 async function login() {
   try {
-    console.log('Trying to authenticate', username.value);
+    console.log('Trying to authenticate', username.value)
     const response = await api.post('login', {
       email: username.value,
       password: password.value,
-    });
+    })
 
-    const token = response?.data;
-    if (!token) {
-      console.error('No token returned from login response', response);
-      return;
-    }
-
-    TokenService.setToken(token);
-
-    // if TokenService.userInfo() is synchronous it will run immediately,
-    // if it returns a promise we await it to ensure user info is fetched
-    try {
-      const maybePromise = TokenService.userInfo();
-      if (maybePromise && typeof maybePromise.then === 'function') {
-        await maybePromise;
-      }
-    } catch (err) {
-      // non-fatal — log and continue
-      console.warn('TokenService.userInfo() failed', err);
-    }
-
+    authStore.login(response?.data)
     // Clear the form inputs
-    username.value = '';
-    password.value = '';
-
-    console.log('Login successful');
-    router.push('/welcome');
+    username.value = ''
+    password.value = ''
+    alert('Login successful')
+    router.push('/welcome')
   } catch (error) {
-    console.error('Login failed', error);
+    console.error('Login failed', error)
   }
 }
 
+onMounted(()=>{
+  if (!sessionStorage.getItem('reloaded')) {
+    sessionStorage.setItem('reloaded', 'true')
+    window.location.reload()
+  } else {
+    sessionStorage.removeItem('reloaded')
+  }
+})
+
 function register() {
-  router.push('/signup');
+  router.push('/signup')
 }
 </script>
-
