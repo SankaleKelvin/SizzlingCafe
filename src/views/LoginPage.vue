@@ -39,7 +39,6 @@ async function login() {
     // Clear the form inputs
     username.value = ''
     password.value = ''
-    alert('Login successful')
     router.push('/welcome')
   } catch (error) {
     console.error('Login failed', error)

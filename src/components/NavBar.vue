@@ -119,6 +119,7 @@ const links = ref([
   },
   { icon: 'mdi-account', text: 'Restaurant', route: '/restaurants' },
   { icon: 'mdi-account', text: 'Food', route: '/food' },
+  { icon: 'mdi-account', text: 'Orders', route: '/orders' },
 ])
 
 // computed color from store
@@ -126,7 +127,6 @@ const computedColor = computed(() => colors.footerColor)
 
 
 function toggleAuthentication() {
-  alert(authenticated.value)
   if(authenticated.value) {
     TokenService.logout()
     router.push('/login')
