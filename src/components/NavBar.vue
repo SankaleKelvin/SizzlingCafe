@@ -120,6 +120,7 @@ const links = ref([
   { icon: 'mdi-account', text: 'Restaurant', route: '/restaurants' },
   { icon: 'mdi-account', text: 'Food', route: '/food' },
   { icon: 'mdi-account', text: 'Orders', route: '/orders' },
+  { icon: 'mdi-cash', text: 'Payments', route: '/payments' },
 ])
 
 // computed color from store

@@ -11,6 +11,7 @@ import CategoriesPage from '@/views/CategoriesPage.vue'
 import FoodsPage from '@/views/FoodsPage.vue'
 import { useAuthStore } from '@/stores/auth'
 import OrdersPage from '@/views/OrdersPage.vue'
+import PaymentsPage from '@/views/PaymentsPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -87,6 +88,14 @@ const router = createRouter({
       path: '/orders',
       name: 'OrdersPage',      
       component: OrdersPage,
+      meta:{
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/payments',
+      name: 'PaymentsPage',      
+      component: PaymentsPage,
       meta:{
         requiresAuth: true
       }

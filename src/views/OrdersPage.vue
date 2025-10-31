@@ -67,7 +67,7 @@
                   :return-object="false"
                 ></v-select>
               </v-col>
-              <v-col cols="6" md="6">
+              <v-col cols="4" md="4">
                 <v-text-field
                   v-model.number="ordersStore.editedItem.quantity"
                   label="Quantity"
@@ -76,8 +76,17 @@
                   step="1"
                 ></v-text-field>
               </v-col>
-
-              <v-col cols="6" md="6">
+              <v-col cols="4" md="4">
+                <v-text-field
+                  v-model.number="ordersStore.editedItem.order_amount"
+                  label="Order Amount"
+                  type="number"
+                  min="1"
+                  step="1"
+                  :readonly="true"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="4" md="4">
                 <v-select
                   :items="['SERVED', 'IN PROGRESS', 'DECLINED', 'COMPLETED']"
                   v-model="ordersStore.editedItem.status"
@@ -172,21 +181,20 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useOrdersStore } from '@/stores/orders'
 import { useFoodsStore } from '@/stores/foods'
-import { useColorsStore } from '@/stores/colors'
 import { useUsersStore } from '@/stores/users'
-import debounce from 'just-debounce-it'
+import { useColorsStore } from '@/stores/colors'
 
 const ordersStore = useOrdersStore()
 const foodsStore = useFoodsStore()
 const usersStore = useUsersStore()
 const colors = useColorsStore()
 
-// local reactive refs
 const snackbarTimeout = 1500
 
+// snackbars bound to store
 const snackbarCreate = computed({
   get: () => ordersStore.snackbarCreate,
   set: (v) => (ordersStore.snackbarCreate = v),
@@ -200,6 +208,7 @@ const snackbarDelete = computed({
   set: (v) => (ordersStore.snackbarDelete = v),
 })
 
+// dialog bindings
 const dialog = computed({
   get: () => ordersStore.dialog,
   set: (v) => (ordersStore.dialog = v),
@@ -209,24 +218,15 @@ const dialogDelete = computed({
   set: (v) => (ordersStore.dialogDelete = v),
 })
 
+// shorthand to edited item
 const editedItem = computed(() => ordersStore.editedItem)
 const formTitle = computed(() => (ordersStore.editedIndex === -1 ? 'New Order' : 'Edit Order'))
 
-const headers = [
-  { title: 'ID', key: 'id', sortable: false, align: 'start' },
-  { title: 'User', key: 'user_id', sortable: true },
-  { title: 'Food', key: 'food_id', sortable: true },
-  { title: 'Quantity', key: 'quantity', sortable: true },
-  { title: 'Status', key: 'status', sortable: true },
-  { title: 'Actions', key: 'actions', sortable: false },
-]
-
-// ------------------ New: live calculation ------------------
-// selected food object (reactive)
+// --------- calculation (client-side) ---------
+// selected food object from foodsStore based on editedItem.food_id
 const selectedFood = computed(() => {
   const fid = ordersStore.editedItem.food_id
   if (!fid) return null
-  // foodsStore.foods expected to be array of { id, name, price, ... }
   return foodsStore.foods.find((f) => String(f.id) === String(fid)) || null
 })
 
@@ -236,7 +236,7 @@ const unitPrice = computed(() => {
   return f ? Number(f.price ?? f.unit_price ?? 0) : 0
 })
 
-// quantity getter/setter : keep editedItem synced (ensures reactivity)
+// quantity as number
 const quantity = computed({
   get: () => {
     const q = ordersStore.editedItem.quantity
@@ -247,58 +247,33 @@ const quantity = computed({
   },
 })
 
-// client-side total, formatted
+// client-side order amount (unitPrice * quantity)
 const clientTotal = computed(() => {
   return Number((unitPrice.value * (quantity.value || 0)).toFixed(2))
 })
 
-// ------------------ New: async server-validated total ------------------
-// show serverTotal while loading spinner if desired
-const serverTotal = ref(null)
-const serverTotalLoading = ref(false)
-
-// debounce server call to avoid hammering backend while user types
-const fetchServerTotalDebounced = debounce(async (food_id, qty) => {
-  if (!food_id || !qty) {
-    serverTotal.value = null
-    serverTotalLoading.value = false
-    return
-  }
-  serverTotalLoading.value = true
-  try {
-    // call a new action on ordersStore (or call API directly)
-    const resp = await ordersStore.calculateTotal(food_id, qty)
-    serverTotal.value = Number(resp ?? 0)
-  } catch (err) {
-    console.error('calculate total error', err)
-    serverTotal.value = null
-  } finally {
-    serverTotalLoading.value = false
-  }
-}, 400) // 400ms debounce
-
-// watch food_id and quantity changes
+// keep editedItem.order_amount in sync with clientTotal (so save() sends it)
 watch(
-  () => [ordersStore.editedItem.food_id, ordersStore.editedItem.quantity],
-  ([fid, qty]) => {
-    // immediately show client total; then call server
-    if (fid && qty && !isNaN(Number(qty))) {
-      fetchServerTotalDebounced(fid, Number(qty))
-    } else {
-      serverTotal.value = null
-    }
+  () => clientTotal.value,
+  (val) => {
+    // write numeric value to editedItem.order_amount
+    ordersStore.editedItem.order_amount = val
   },
-  { immediate: true },
+  { immediate: true }
 )
 
-// lifecycle
+// formatted for UI
+const formattedUnitPrice = computed(() => Number(unitPrice.value ?? 0).toFixed(2))
+const formattedClientTotal = computed(() => Number(clientTotal.value ?? 0).toFixed(2))
+
+// lifecycle: fetch lists
 onMounted(() => {
   ordersStore.fetchOrders()
   foodsStore.fetchFoods()
   usersStore.fetchUsers()
 })
 
-// actions
+// --------- actions (unchanged behavior, minimal) ----------
 function openCreate() {
   ordersStore.openDialog()
 }
@@ -320,34 +295,29 @@ function closeDelete() {
 }
 
 async function save() {
-  // build FormData
   const fd = new FormData()
-  // include fields expected by backend
   fd.append('quantity', editedItem.value.quantity || '')
+  // ensure order_amount is numeric value (clientTotal watcher keeps this in sync)
+  fd.append('order_amount', editedItem.value.order_amount ?? clientTotal.value)
   fd.append('status', editedItem.value.status || '')
   if (editedItem.value.food_id) fd.append('food_id', editedItem.value.food_id)
   if (editedItem.value.user_id) fd.append('user_id', editedItem.value.user_id)
 
   try {
     if (ordersStore.editedIndex > -1) {
-      // update
       await ordersStore.updateOrder(ordersStore.editedIndex, fd)
       snackbarUpdate.value = true
       colors.setFooterColor('warning')
     } else {
-      // create
       await ordersStore.createOrder(fd)
       snackbarCreate.value = true
       colors.setFooterColor('success')
     }
-    // refresh list to ensure consistent state
     await ordersStore.fetchOrders()
-    // reset form
     ordersStore.closeDialog()
   } catch (err) {
     console.error('save error', err)
   } finally {
-    // reset color after timeout (optional)
     setTimeout(() => {
       colors.setFooterColor('info')
     }, snackbarTimeout + 200)
@@ -369,25 +339,5 @@ async function confirmDelete() {
 function refresh() {
   ordersStore.fetchOrders()
 }
-
-const formattedUnitPrice = computed(() => {
-  // show two decimals; fall back to 0.00
-  return Number(unitPrice.value ?? 0).toFixed(2)
-})
-
-const formattedClientTotal = computed(() => {
-  return Number(clientTotal.value ?? 0).toFixed(2)
-})
-
-const formattedServerTotal = computed(() => {
-  return serverTotal.value != null ? Number(serverTotal.value).toFixed(2) : '—'
-})
-
-// show a visual flag when server total exists and differs (2-decimal compare)
-const serverTotalDiffers = computed(() => {
-  if (serverTotal.value == null) return false
-  return (
-    Number(Number(serverTotal.value).toFixed(2)) !== Number(Number(clientTotal.value).toFixed(2))
-  )
-})
 </script>
+

@@ -19,11 +19,11 @@
     <!-- Data table -->
     <v-data-table :headers="headers" :items="usersStore.users" class="elevation-1">
       <template v-slot:top>
-        <v-toolbar flat color="transparent">
+        <v-toolbar flat color="blue">
           <v-toolbar-title>Users</v-toolbar-title>
           <v-spacer></v-spacer>
 
-          <v-btn color="primary" @click="openCreate">New User</v-btn>
+          <v-btn color="white" style="background-color: grey;" @click="openCreate">New User</v-btn>
         </v-toolbar>
       </template>
 

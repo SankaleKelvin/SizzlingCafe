@@ -14,6 +14,7 @@ export const useOrdersStore = defineStore('orders', {
       id: '',
       status: '',
       quantity: '',
+      order_amount: '',
       user_id: null,
       food_id: null,
     },
@@ -21,6 +22,7 @@ export const useOrdersStore = defineStore('orders', {
       id: '',
       status: '',
       quantity: '',
+      order_amount: '',
       user_id: null,
       food_id: null,
     },
@@ -100,6 +102,7 @@ export const useOrdersStore = defineStore('orders', {
         this.editedItem = {
           id: data.id,
           quantity: data.quantity || '',
+          order_amount: data.order_amount || '',
           status: data.status || '',
           user_id: data.user_id ?? null,
           food_id: data.food_id ?? null,
