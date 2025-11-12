@@ -42,14 +42,14 @@
     <!-- Create / Edit Dialog -->
     <v-dialog v-model="paymentsStore.dialog" max-width="600px" @click:outside="closeDialog">
       <v-card>
-        <v-card-title>
+        <v-card-title style="background-color: cornflowerblue;">
           <span class="text-h5">{{ formTitle }}</span>
         </v-card-title>
 
         <v-card-text>
           <v-container>
             <v-row>
-              <v-col cols="6" md="6">
+              <v-col cols="12" md="12">
                 <v-select
                   :items="ordersStore.orders"
                   v-model="paymentsStore.editedItem.order_id"
@@ -137,8 +137,8 @@
         <v-card-title class="text-h6">Confirm delete?</v-card-title>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="closeDelete">Cancel</v-btn>
-          <v-btn text color="error" @click="confirmDelete">OK</v-btn>
+          <v-btn style="background-color: coral;" text @click="closeDialog">Cancel</v-btn>
+          <v-btn style="background-color: cornflowerblue;" text @click="save">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -151,7 +151,6 @@ import { usePaymentsStore } from '@/stores/payments'
 import { useUsersStore } from '@/stores/users'
 import { useColorsStore } from '@/stores/colors'
 import { useOrdersStore } from '@/stores/orders'
-
 
 const paymentsStore = usePaymentsStore()
 const usersStore = useUsersStore()
@@ -196,46 +195,60 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
-// ------------------ New: live calculation ------------------
-// selected order object (assumes ordersStore.orders contains each order with a `total` or `amount` field)
-const selectedOrder = computed(() => {
-  const oid = paymentsStore.editedItem.order_id
-  if (!oid) return null
-  return ordersStore.orders.find((o) => String(o.id) === String(oid)) || null
-})
+// ----- local refs for user-balance -------
+const userOrdersSum = ref(0)     // total of user's orders
+const userPaymentsSum = ref(0)   // total payments made by user
+const balanceBFRef = ref(0)      // server-sent balance (your controller returns balance)
+const loadingBalance = ref(false)
 
-// order total (fallbacks in case field names differ)
-const orderTotal = computed(() => {
-  const o = selectedOrder.value
-  // try common names: total, amount, grand_total, price
-  if (!o) return 0
-  return Number(o.total ?? o.amount ?? o.grand_total ?? o.price ?? 0)
-})
+// fetch user balance from your controller route GET /api/getUserBalance/{id}
+async function loadUserBalance(userId) {
+  if (!userId) {
+    balanceBFRef.value = 0
+    return
+  }
+  loadingBalance.value = true
+  try {
+    const data = await paymentsStore.fetchUserBalance(userId)
+    // store action returns controller JSON: { balance, total_orders, total_payments }
+    balanceBFRef.value = Number(data?.balance ?? 0)
+  } catch (e) {
+    console.error(e)
+    balanceBFRef.value = 0
+  } finally {
+    loadingBalance.value = false
+  }
+}
 
-// sum of previous payments for this order (excluding current edited payment if editing)
-const paidSoFar = computed(() => {
-  const oid = paymentsStore.editedItem.order_id
-  if (!oid || !paymentsStore.payments) return 0
-  // sum all payments for that order
-  const sum = paymentsStore.payments
-    .filter((p) => String(p.order_id) === String(oid))
-    // if editing an existing payment, exclude that payment's own previous amount to avoid double-counting
-    .filter((p) => {
-      if (paymentsStore.editedIndex > -1 && String(p.id) === String(paymentsStore.editedIndex)) {
-        return false
-      }
-      return true
-    })
-    .reduce((acc, p) => acc + Number(p.amount_paid ?? 0), 0)
-  return Number(sum)
-})
+// watch order selection: set user and load balance
+watch(
+  () => paymentsStore.editedItem.order_id,
+  (orderId) => {
+    if (!orderId) {
+      paymentsStore.editedItem.user_id = null
+      balanceBFRef.value = 0
+      return
+    }
+    // find order (ordersStore should already be loaded)
+    let order = ordersStore.orders.find((o) => String(o.id) === String(orderId))
+    if (!order) {
+      // try one fetch then re-find (only if necessary)
+      ordersStore.fetchOrders().then(() => {
+        order = ordersStore.orders.find((o) => String(o.id) === String(orderId))
+        const uid = order?.user_id ?? null
+        paymentsStore.editedItem.user_id = uid
+        loadUserBalance(uid)
+      })
+      return
+    }
+    const uid = order.user_id ?? null
+    paymentsStore.editedItem.user_id = uid
+    loadUserBalance(uid)
+  },
+  { immediate: true }
+)
 
-// Balance brought forward (before this payment)
-const balanceBF = computed(() => {
-  return Number((orderTotal.value - paidSoFar.value).toFixed(2))
-})
-
-// amount the user is entering now (paymentsStore.editedItem.amount_paid)
+// -------- existing computed chips mapping --------
 const amountPaid = computed({
   get: () => {
     const v = paymentsStore.editedItem.amount_paid
@@ -246,13 +259,12 @@ const amountPaid = computed({
   },
 })
 
-// balance carried forward after applying amountPaid
 const balanceCF = computed(() => {
-  return Number((balanceBF.value - amountPaid.value).toFixed(2))
+  // carried forward after applying current amountPaid
+  return Number((balanceBFRef.value + amountPaid.value).toFixed(2))
 })
 
-// formatted strings for display
-const formattedBalanceBF = computed(() => Number(balanceBF.value).toFixed(2))
+const formattedBalanceBF = computed(() => Number(balanceBFRef.value ?? 0).toFixed(2))
 const formattedAmountPaid = computed(() => Number(amountPaid.value ?? 0).toFixed(2))
 const formattedBalanceCF = computed(() => Number(balanceCF.value ?? 0).toFixed(2))
 
@@ -263,13 +275,15 @@ onMounted(() => {
   usersStore.fetchUsers()
 })
 
-// actions
+// actions (unchanged)
 function openCreate() {
   paymentsStore.openDialog()
 }
 
 async function onEdit(id) {
   await paymentsStore.editItem(id)
+  const uid = paymentsStore.editedItem.user_id ?? null
+  if (uid) loadUserBalance(uid)
 }
 
 function onDelete(id) {
@@ -287,30 +301,22 @@ function closeDelete() {
 async function save() {
   // build FormData
   const fd = new FormData()
-  // include fields expected by backend
   fd.append('amount_paid', editedItem.value.amount_paid || '')
   if (editedItem.value.order_id) fd.append('order_id', editedItem.value.order_id)
+  if (editedItem.value.user_id) fd.append('user_id', editedItem.value.user_id)
 
   try {
     if (paymentsStore.editedIndex > -1) {
-      // update
       await paymentsStore.updatePayment(paymentsStore.editedIndex, fd)
-      snackbarUpdate.value = true
-      colors.setFooterColor('warning')
     } else {
-      // create
       await paymentsStore.createPayment(fd)
-      snackbarCreate.value = true
-      colors.setFooterColor('success')
     }
-    // refresh list to ensure consistent state
+    // refresh and close
     await paymentsStore.fetchPayments()
-    // reset form
     paymentsStore.closeDialog()
   } catch (err) {
     console.error('save error', err)
   } finally {
-    // reset color after timeout (optional)
     setTimeout(() => {
       colors.setFooterColor('info')
     }, snackbarTimeout + 200)
@@ -321,7 +327,6 @@ async function confirmDelete() {
   if (!paymentsStore.deletingId) return
   try {
     await paymentsStore.deletePayment(paymentsStore.deletingId)
-    snackbarDelete.value = true
   } catch (err) {
     console.error('confirmDelete error', err)
   } finally {
@@ -333,3 +338,4 @@ function refresh() {
   paymentsStore.fetchPayments()
 }
 </script>
+

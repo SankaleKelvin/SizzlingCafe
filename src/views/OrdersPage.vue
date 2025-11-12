@@ -40,7 +40,7 @@
     <!-- Create / Edit Dialog -->
     <v-dialog v-model="ordersStore.dialog" max-width="600px" @click:outside="closeDialog">
       <v-card>
-        <v-card-title>
+        <v-card-title style="background-color: cornflowerblue;">
           <span class="text-h5">{{ formTitle }}</span>
         </v-card-title>
 
@@ -67,6 +67,7 @@
                   :return-object="false"
                 ></v-select>
               </v-col>
+
               <v-col cols="4" md="4">
                 <v-text-field
                   v-model.number="ordersStore.editedItem.quantity"
@@ -76,16 +77,18 @@
                   step="1"
                 ></v-text-field>
               </v-col>
+
               <v-col cols="4" md="4">
                 <v-text-field
                   v-model.number="ordersStore.editedItem.order_amount"
                   label="Order Amount"
                   type="number"
-                  min="1"
-                  step="1"
+                  min="0"
+                  step="0.01"
                   :readonly="true"
                 ></v-text-field>
               </v-col>
+
               <v-col cols="4" md="4">
                 <v-select
                   :items="['SERVED', 'IN PROGRESS', 'DECLINED', 'COMPLETED']"
@@ -95,61 +98,36 @@
                 ></v-select>
               </v-col>
 
-              <!-- put after the Quantity field (inside same v-col group or new col) -->
-              <!-- Replace your previous Unit Price / Total v-cols with this block -->
+              <!-- Balance chips row -->
               <v-col cols="12" md="12">
                 <v-row class="align-center" dense>
                   <v-col cols="12" sm="4" class="d-flex align-center">
                     <div>
-                      <div class="text-caption mb-1">Unit price</div>
-                      <v-chip outlined small class="ma-0" aria-label="Unit price">
-                        <strong>{{ formattedUnitPrice }}</strong>
+                      <div class="text-caption mb-1">Balance B/F</div>
+                      <div v-if="loadingBalance" class="d-flex">
+                        <v-skeleton-loader type="heading" width="90px" />
+                      </div>
+                      <v-chip v-else outlined small class="ma-0" aria-label="Balance brought forward">
+                        <strong>{{ formattedBalanceBF }}</strong>
                       </v-chip>
                     </div>
                   </v-col>
 
                   <v-col cols="12" sm="4" class="d-flex align-center">
                     <div>
-                      <div class="text-caption mb-1">Total (client)</div>
-                      <v-chip
-                        color="primary"
-                        text-color="white"
-                        small
-                        class="ma-0"
-                        aria-label="Client total"
-                      >
+                      <div class="text-caption mb-1">Order Amount</div>
+                      <v-chip color="primary" text-color="white" small class="ma-0" aria-label="Order amount">
                         <strong>{{ formattedClientTotal }}</strong>
                       </v-chip>
                     </div>
                   </v-col>
 
-                  <v-col cols="6" sm="4" class="d-flex align-center">
+                  <v-col cols="12" sm="4" class="d-flex align-center">
                     <div>
-                      <div class="text-caption mb-1">Total (server)</div>
-
-                      <!-- show skeleton while loading -->
-                      <div v-if="serverTotalLoading" class="d-flex">
-                        <v-skeleton-loader type="heading" width="100px" />
-                      </div>
-
-                      <!-- show server total (if available) -->
-                      <div v-else-if="serverTotal !== null">
-                        <v-chip outlined small class="ma-0" aria-label="Server total">
-                          <strong>{{ formattedServerTotal }}</strong>
-                          <v-icon
-                            small
-                            class="ms-2"
-                            v-if="serverTotalDiffers"
-                            title="Server differs from client"
-                            >mdi-alert-circle</v-icon
-                          >
-                        </v-chip>
-                      </div>
-
-                      <!-- fallback when server total not available -->
-                      <div v-else>
-                        <v-chip small class="ma-0">—</v-chip>
-                      </div>
+                      <div class="text-caption mb-1">Balance C/F</div>
+                      <v-chip outlined small class="ma-0" aria-label="Balance carried forward">
+                        <strong :class="{ 'text-danger': expectedBalance < 0 }">{{ formattedExpectedBalance }}</strong>
+                      </v-chip>
                     </div>
                   </v-col>
                 </v-row>
@@ -160,8 +138,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="closeDialog">Cancel</v-btn>
-          <v-btn text @click="save">Save</v-btn>
+          <v-btn style="background-color: coral;" text @click="closeDialog">Cancel</v-btn>
+          <v-btn style="background-color: cornflowerblue;" text @click="save">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -181,7 +159,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useOrdersStore } from '@/stores/orders'
 import { useFoodsStore } from '@/stores/foods'
 import { useUsersStore } from '@/stores/users'
@@ -222,6 +200,16 @@ const dialogDelete = computed({
 const editedItem = computed(() => ordersStore.editedItem)
 const formTitle = computed(() => (ordersStore.editedIndex === -1 ? 'New Order' : 'Edit Order'))
 
+const headers = [
+  { title: 'ID', key: 'id', sortable: false, align: 'start' },
+  { title: 'Order', key: 'order_code', sortable: true },
+  { title: 'Customer', key: 'user_name', sortable: true },
+  { title: 'Food', key: 'food_name', sortable: true },
+  { title: 'Quantity', key: 'quantity', sortable: true },
+  { title: 'Order Amount', key: 'order_amount', sortable: true },
+  { title: 'Actions', key: 'actions', sortable: false },
+]
+
 // --------- calculation (client-side) ---------
 // selected food object from foodsStore based on editedItem.food_id
 const selectedFood = computed(() => {
@@ -256,7 +244,6 @@ const clientTotal = computed(() => {
 watch(
   () => clientTotal.value,
   (val) => {
-    // write numeric value to editedItem.order_amount
     ordersStore.editedItem.order_amount = val
   },
   { immediate: true }
@@ -266,6 +253,63 @@ watch(
 const formattedUnitPrice = computed(() => Number(unitPrice.value ?? 0).toFixed(2))
 const formattedClientTotal = computed(() => Number(clientTotal.value ?? 0).toFixed(2))
 
+// ------------------ User balance (server) ------------------
+// balance refs used by chips
+const balanceBFRef = ref(0)      // server-sent balance (current B/F)
+const loadingBalance = ref(false)
+
+// helper that asks the store for the user balance
+async function loadUserBalance(userId) {
+  if (!userId) {
+    balanceBFRef.value = 0
+    return
+  }
+  loadingBalance.value = true
+  try {
+    const data = await ordersStore.fetchUserBalance(userId)
+    // data shape: { balance, total_orders, total_payments }
+    balanceBFRef.value = Number(data?.balance ?? 0)
+  } catch (err) {
+    console.error('loadUserBalance error', err)
+    balanceBFRef.value = 0
+  } finally {
+    loadingBalance.value = false
+  }
+}
+
+// Expected balance after adding/updating this order: BalanceBF - clientTotal
+const expectedBalance = computed(() => {
+  return Number((balanceBFRef.value + clientTotal.value).toFixed(2))
+})
+
+const formattedBalanceBF = computed(() => Number(balanceBFRef.value ?? 0).toFixed(2))
+const formattedExpectedBalance = computed(() => Number(expectedBalance.value ?? 0).toFixed(2))
+
+// When modal opens (dialog true) and/or user_id changes, load current balance
+watch(
+  () => ordersStore.dialog,
+  (isOpen) => {
+    if (!isOpen) return
+    // if a user is already selected when modal opens, fetch balance
+    const uid = ordersStore.editedItem.user_id ?? null
+    if (uid) loadUserBalance(uid)
+    else balanceBFRef.value = 0
+  },
+  { immediate: true }
+)
+
+// also react when user_id inside form changes (user selects different customer in modal)
+watch(
+  () => ordersStore.editedItem.user_id,
+  (uid) => {
+    if (!uid) {
+      balanceBFRef.value = 0
+      return
+    }
+    loadUserBalance(uid)
+  }
+)
+
 // lifecycle: fetch lists
 onMounted(() => {
   ordersStore.fetchOrders()
@@ -273,13 +317,14 @@ onMounted(() => {
   usersStore.fetchUsers()
 })
 
-// --------- actions (unchanged behavior, minimal) ----------
+// --------- actions (unchanged behaviour, minimal) ----------
 function openCreate() {
   ordersStore.openDialog()
 }
 
 async function onEdit(id) {
   await ordersStore.editItem(id)
+  // when editing, the dialog will open and the watcher on dialog/user_id will trigger load
 }
 
 function onDelete(id) {
@@ -340,4 +385,3 @@ function refresh() {
   ordersStore.fetchOrders()
 }
 </script>
-

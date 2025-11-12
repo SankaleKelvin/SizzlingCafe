@@ -40,7 +40,7 @@
     <!-- Create / Edit Dialog -->
     <v-dialog v-model="categoriesStore.dialog" max-width="600px" @click:outside="closeDialog">
       <v-card>
-        <v-card-title>
+        <v-card-title style="background-color: cornflowerblue;">
           <span class="text-h5">{{ formTitle }}</span>
         </v-card-title>
 
@@ -59,8 +59,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="closeDialog">Cancel</v-btn>
-          <v-btn text @click="save">Save</v-btn>
+          <v-btn style="background-color: coral;" text @click="closeDialog">Cancel</v-btn>
+          <v-btn style="background-color: cornflowerblue;" text @click="save">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

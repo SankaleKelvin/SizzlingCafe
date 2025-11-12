@@ -108,12 +108,14 @@ export const usePaymentsStore = defineStore('payments', {
         console.error('editItem error', err)
       }
     },
-    async calculateUserBalance(user_id) {
+    async fetchUserBalance(userId) {
+      if (!userId) return null
       try {
-        const resp = await api_2.post('/calculate-user-balance', user_id)
-        return resp?.data ?? null
+        const resp = await api.get(`/getUserBalance/${encodeURIComponent(userId)}`)
+        // axios returns data on resp.data
+        return resp.data ?? null
       } catch (err) {
-        console.error('calculateUserBalance error', err)
+        console.error('fetchUserBalance error', err)
         return null
       }
     },

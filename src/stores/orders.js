@@ -113,15 +113,14 @@ export const useOrdersStore = defineStore('orders', {
       }
     },
 
-    async calculateTotal(food_id, quantity) {
+    async fetchUserBalance(userId) {
+      if (!userId) return null
       try {
-        const resp = await api_2.post('/calculateOrder', { food_id, quantity })
-        if (resp && resp.data) {
-          return resp.data.total ?? resp.data
-        }
-        return null
+        const resp = await api.get(`/getUserBalance/${encodeURIComponent(userId)}`)
+        // axios resp.data is JSON returned by controller
+        return resp.data ?? null
       } catch (err) {
-        console.error('calculateTotal error', err)
+        console.error('ordersStore.fetchUserBalance error', err)
         return null
       }
     },
