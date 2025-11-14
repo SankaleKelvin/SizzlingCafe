@@ -4,11 +4,42 @@
       <v-col cols="12" md="6">
         <v-card class="pa-4">
           <v-card-title class="headline">Please Login ...</v-card-title>
+          <!-- Error Alert-->
+          <v-alert
+            v-if="errorMessage"
+            type="error"
+            variant="tonal"
+            class="mb-3"
+            closable
+            @click:close="errorMessage = ''"
+          >
+            {{ errorMessage }}
+          </v-alert>
+
+          <!-- Success Alert -->
+          <v-alert
+            v-if="successMessage"
+            type="success"
+            variant="tonal"
+            class="mb-3"
+            closable
+            @click:close="successMessage = ''"
+          >
+            {{ successMessage }}
+          </v-alert>
           <v-form @submit.prevent="login">
             <v-text-field label="Username" v-model="username" required />
             <v-text-field label="Password" type="password" v-model="password" required />
-            <v-btn type="submit" color="primary">Login</v-btn>
-            <v-btn text @click="register">Not yet registered? Register</v-btn>
+            <v-btn
+              type="submit"
+              block
+              class="mt-2"
+              color="primary"
+              :loading="loading"
+              :disabled="loading"
+              >Login</v-btn
+            >
+            <v-btn text block class="mt-2" @click="register">Not yet registered? Register</v-btn>
           </v-form>
         </v-card>
       </v-col>
@@ -26,8 +57,14 @@ const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
+const loading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
 
 async function login() {
+  loading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
   try {
     console.log('Trying to authenticate', username.value)
     const response = await api.post('login', {
@@ -35,17 +72,28 @@ async function login() {
       password: password.value,
     })
 
-    authStore.login(response?.data)
+    if (response?.data?.Error) {
+      errorMessage.value = response.data.Message || 'Login failed.'
+      loading.value = false
+      return
+    }
+    successMessage.value = 'Login Successful!'
+    authStore.login(response.data)
     // Clear the form inputs
     username.value = ''
     password.value = ''
-    router.push('/welcome')
+    setTimeout(() => {
+      router.push('/welcome')
+    }, 3000)
   } catch (error) {
-    console.error('Login failed', error)
+    // console.error(error)
+    errorMessage.value = 'An unexpected error occurred. Please try again.'
+  } finally {
+    loading.value = false
   }
 }
 
-onMounted(()=>{
+onMounted(() => {
   if (!sessionStorage.getItem('reloaded')) {
     sessionStorage.setItem('reloaded', 'true')
     window.location.reload()

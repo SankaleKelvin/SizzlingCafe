@@ -14,8 +14,8 @@
               v-model="password_confirmation"
               required
             />
-            <v-btn type="submit" color="primary">Sign Up</v-btn>
-            <v-btn text @click="login">Already registered? Login</v-btn>
+            <v-btn type="submit" class="mt-2" block color="primary">Sign Up</v-btn>
+            <v-btn text block class="mt-2" @click="login">Already registered? Login</v-btn>
           </form>
         </v-card>
       </v-col>

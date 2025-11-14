@@ -12,6 +12,7 @@ import FoodsPage from '@/views/FoodsPage.vue'
 import { useAuthStore } from '@/stores/auth'
 import OrdersPage from '@/views/OrdersPage.vue'
 import PaymentsPage from '@/views/PaymentsPage.vue'
+import EmailVerified from '@/views/EmailVerified.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,6 +36,11 @@ const router = createRouter({
       path: '/signup',
       name: 'SignupPage',      
       component: SignupPage,
+    },
+    {
+      path: '/email-verified',
+      name: 'EmailVerified',      
+      component: EmailVerified,
     },
     {
       path: '/welcome',
