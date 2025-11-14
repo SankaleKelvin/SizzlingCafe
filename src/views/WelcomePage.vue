@@ -36,7 +36,7 @@
             block
             color="deep-purple"
             dark
-            @click="goTo('dashboard')"
+            @click="goTo('DashboardPage')"
             prepend-icon="mdi-view-dashboard"
           >
             Dashboard
